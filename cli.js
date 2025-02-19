@@ -74,6 +74,19 @@ async function callApi(method, endpoint, data = null) {
   }
 }
 
+// New reset function
+async function resetService() {
+  try {
+    if (fs.existsSync(STATE_FILE)) {
+      fs.unlinkSync(STATE_FILE);
+    }
+    await callApi('POST', '/service/stop');
+    console.log('Service stopped and conversation state reset successfully');
+  } catch (error) {
+    console.error('Error resetting service:', error.message);
+  }
+}
+
 // Command handlers
 async function openBrowser() {
   await callApi('POST', '/browser/open');
@@ -120,14 +133,14 @@ yargs
   .command('start-grok', 'Start a new Grok conversation', {}, () => startConversation('grok'))
   .command('close-gemini', 'Close the active Gemini conversation', {}, () => closeConversation('gemini'))
   .command('close-grok', 'Close the active Grok conversation', {}, () => closeConversation('grok'))
-  .command('converse-gemini <message>', 'Send a message to Gemini', {
+  .command('gemini <message>', 'Send a message to Gemini', {
     message: {
       describe: 'Message to send',
       demandOption: true,
       type: 'string'
     }
   }, (argv) => sendMessage('gemini', argv.message))
-  .command('converse-grok <message>', 'Send a message to Grok', {
+  .command('grok <message>', 'Send a message to Grok', {
     message: {
       describe: 'Message to send',
       demandOption: true,
@@ -141,4 +154,5 @@ yargs
       type: 'boolean'
     }
   }, (argv) => configureHeadless(argv.mode))
+  .command('reset', 'Stop the service and reset conversation state', {}, resetService)
   .argv;

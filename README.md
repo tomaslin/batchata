@@ -29,6 +29,9 @@ batchata open-browser
 # Configure browser headless mode
 batchata headless true  # Enable headless mode
 batchata headless false # Disable headless mode
+
+# Stop the server and delete the .json file keeping track of stff
+batchata reset
 ```
 
 ### Conversation Management
@@ -39,7 +42,7 @@ batchata headless false # Disable headless mode
 batchata start-gemini
 
 # Send a message to Gemini
-batchata converse-gemini "Your message here"
+batchata gemini "Your message here"
 
 # Close the active Gemini conversation
 batchata close-gemini
@@ -51,7 +54,7 @@ batchata close-gemini
 batchata start-grok
 
 # Send a message to Grok
-batchata converse-grok "Your message here"
+batchata grok "Your message here"
 
 # Close the active Grok conversation
 batchata close-grok

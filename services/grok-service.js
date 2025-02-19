@@ -10,7 +10,6 @@ class GrokService {
     if (!this.browser) {
       const browserConfig = {
         ...this.config,
-        userDataDir: undefined // No profile for Grok
       };
       this.browser = await puppeteer.launch(browserConfig);
     }

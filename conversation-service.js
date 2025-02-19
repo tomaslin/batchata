@@ -8,13 +8,27 @@ app.use(express.json());
 
 // Configuration
 const config = {
-  headless: false // can be set to false for visible browser
+  headless: "new" // can be set to false for visible browser
 };
 
 // Store active conversations
 const conversations = new Map();
 let geminiService = null;
 let grokService = null;
+
+// Open browser endpoint
+app.post('/browser/open', async (req, res) => {
+  try {
+    if (!geminiService) {
+      geminiService = new GeminiService(config);
+    }
+    const page = await geminiService.initializeConversation();
+    res.json({ status: 'opened' });
+  } catch (error) {
+    console.error('Error opening browser:', error);
+    res.status(500).json({ error: 'Failed to open browser' });
+  }
+});
 
 // Open a new conversation
 app.post('/conversation', async (req, res) => {
