@@ -10,6 +10,7 @@ class GrokService {
     if (!this.browser) {
       const browserConfig = {
         ...this.config,
+        executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
       };
       this.browser = await puppeteer.launch(browserConfig);
     }

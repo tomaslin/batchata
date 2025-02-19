@@ -11,6 +11,7 @@ class GeminiService {
     if (!this.browser) {
       const browserConfig = {
         ...this.config,
+        executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
         userDataDir: path.join(process.cwd(), 'chrome-profile'), // Load profile for Gemini
         defaultViewport: null, // Allow viewport to be resizable
       };
