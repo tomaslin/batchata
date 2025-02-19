@@ -14,8 +14,6 @@ class GeminiService {
         executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
         userDataDir: path.join(process.cwd(), 'chrome-profile') // Load profile for Gemini
       };
-
-      console.log(browserConfig);
       this.browser = await puppeteer.launch(browserConfig);
     }
     return this.browser;
@@ -58,6 +56,8 @@ class GeminiService {
       return document.querySelectorAll('div.avatar_primary_animation.is-gpi-avatar[data-test-lottie-animation-status="completed"]').length;
     });
 
+    console.log("inital count:" + initialCount);
+
     await page.evaluate((text) => {
       const editor = document.querySelector('.ql-editor');
       editor.textContent = text;
@@ -69,12 +69,12 @@ class GeminiService {
     // Wait for a new response to complete with increased timeout and improved detection
     await page.waitForFunction((prevCount) => {
       const completedDivs = document.querySelectorAll('div.avatar_primary_animation.is-gpi-avatar[data-test-lottie-animation-status="completed"]');
-      const responseElements = document.querySelectorAll('.model-response-text');
-      return completedDivs.length > prevCount || (responseElements.length > 0 && responseElements[responseElements.length - 1].textContent.trim().length > 0);
+      console.log("completed div count:" + completedDivs);
+      return completedDivs.length > prevCount;
     }, { timeout: 120000 }, initialCount);
 
-    // Add a small delay to ensure response is fully loaded
-    await page.waitForTimeout(1000);
+    // Replace waitForTimeout with Promise-based setTimeout
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
     // Capture the response text
     const response = await page.evaluate(() => {
@@ -91,6 +91,9 @@ class GeminiService {
       }
       return '';
     });
+
+
+    console.log(response);
 
     return response;
   }

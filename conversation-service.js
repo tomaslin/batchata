@@ -11,10 +11,44 @@ const config = {
   headless: false // can be set to false for visible browser
 };
 
-// Store active conversations
+// Store active conversations and message queues
 const conversations = new Map();
+const messageQueues = new Map();
+const processingStatus = new Map();
 let geminiService = null;
 let grokService = null;
+
+// Helper function to process message queue
+async function processMessageQueue(conversationId) {
+  if (processingStatus.get(conversationId)) return;
+  
+  const queue = messageQueues.get(conversationId);
+  if (!queue || queue.length === 0) return;
+  
+  processingStatus.set(conversationId, true);
+  
+  try {
+    const conversation = conversations.get(conversationId);
+    if (!conversation) return;
+    
+    while (queue.length > 0) {
+      const { message, resolve, reject } = queue[0];
+      try {
+        const { page, serviceInstance } = conversation;
+        const response = await serviceInstance.sendMessage(page, message);
+        resolve({ status: 'completed', response });
+      } catch (error) {
+        reject(error);
+      }
+      queue.shift();
+    }
+  } finally {
+    processingStatus.set(conversationId, false);
+    if (queue.length > 0) {
+      processMessageQueue(conversationId);
+    }
+  }
+}
 
 // Open browser endpoint
 app.post('/browser/open', async (req, res) => {
@@ -22,7 +56,7 @@ app.post('/browser/open', async (req, res) => {
     if (!geminiService) {
       geminiService = new GeminiService(config);
     }
-    const page = await geminiService.initializeConversation();
+    await geminiService.initializeConversation();
     res.json({ status: 'opened' });
   } catch (error) {
     console.error('Error opening browser:', error);
@@ -54,9 +88,9 @@ app.post('/conversation', async (req, res) => {
 
     const page = await serviceInstance.initializeConversation();
     const conversationId = uuidv4();
-    
-    // Store conversation data with service type
     conversations.set(conversationId, { page, service, serviceInstance });
+    messageQueues.set(conversationId, []);
+    processingStatus.set(conversationId, false);
     
     res.json({ conversationId });
   } catch (error) {
@@ -78,6 +112,8 @@ app.delete('/conversation/:id', async (req, res) => {
     const { page, serviceInstance } = conversation;
     await serviceInstance.closePage(page);
     conversations.delete(id);
+    messageQueues.delete(id);
+    processingStatus.delete(id);
     
     // Clean up the service if no more conversations
     if (conversations.size === 0) {
@@ -112,10 +148,18 @@ app.post('/conversation/:id/message', async (req, res) => {
       return res.status(404).json({ error: 'Conversation not found' });
     }
     
-    const { page, serviceInstance } = conversation;
-    const response = await serviceInstance.sendMessage(page, message);
-    
-    res.json({ status: 'completed', response });
+    const queue = messageQueues.get(id);
+    if (!queue) {
+      return res.status(404).json({ error: 'Queue not found' });
+    }
+
+    const messagePromise = new Promise((resolve, reject) => {
+      queue.push({ message, resolve, reject });
+    });
+
+    processMessageQueue(id);
+    const result = await messagePromise;
+    res.json(result);
   } catch (error) {
     console.error('Error sending message:', error);
     res.status(500).json({ error: 'Failed to send message' });

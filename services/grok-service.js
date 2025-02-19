@@ -29,7 +29,6 @@ class GrokService {
   }
 
   async sendMessage(page, message) {
-    await this.initializeConversation(page);
     
     const textareaSelector = 'textarea.w-full';
     await page.waitForSelector(textareaSelector);
