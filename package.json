@@ -1,0 +1,23 @@
+{
+  "name": "batchata",
+  "version": "1.0.0",
+  "description": "Conversation service for AI chat interfaces",
+  "main": "conversation-service.js",
+  "scripts": {
+    "start": "node conversation-service.js",
+    "test": "jest"
+  },
+  "dependencies": {
+    "axios": "^1.6.2",
+    "express": "^4.18.2",
+    "puppeteer": "^24.2.1",
+    "uuid": "^9.0.1",
+    "yargs": "^17.7.2"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "bin": {
+    "batchata": "./cli.js"
+  }
+}
