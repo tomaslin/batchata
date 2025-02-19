@@ -8,7 +8,7 @@ app.use(express.json());
 
 // Configuration
 const config = {
-  headless: "new" // can be set to false for visible browser
+  headless: false // can be set to false for visible browser
 };
 
 // Store active conversations
@@ -158,6 +158,42 @@ app.put('/config/headless', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
+// Stop service endpoint
+app.post('/service/stop', async (req, res) => {
+  try {
+    // Close all existing conversations and cleanup services
+    for (const [id, conversation] of conversations) {
+      const { page, serviceInstance } = conversation;
+      await serviceInstance.closePage(page);
+      conversations.delete(id);
+    }
+    
+    if (geminiService) {
+      await geminiService.cleanup();
+      geminiService = null;
+    }
+    if (grokService) {
+      await grokService.cleanup();
+      grokService = null;
+    }
+
+    res.json({ status: 'stopped' });
+    
+    // Give time for the response to be sent before shutting down
+    setTimeout(() => {
+      process.exit(0);
+    }, 100);
+  } catch (error) {
+    console.error('Error stopping service:', error);
+    res.status(500).json({ error: 'Failed to stop service' });
+  }
+});
+
+const server = app.listen(PORT, () => {
   console.log(`Conversation service listening on port ${PORT}`);
+});
+
+// Handle graceful shutdown
+process.on('SIGTERM', () => {
+  server.close();
 });
